@@ -3,7 +3,7 @@ import json
 import sys
 import random
 
-MAX_DEPTH = 2
+MAX_DEPTH = 4
 
 with open("vizinhos.json") as v_file:
 	neighbors = json.load(v_file)
@@ -20,17 +20,25 @@ class Board():
 	def __str__(self):
 
 		output = "YELLOW:" + str(self.yellow)
-		output += "\nRED:" + str(self.red)
+		output += "\t RED:" + str(self.red)
 
 		return output
 
 	def avaliacao(self, me):
 		n_y = len([x for x in self.yellow if x != None])
 		n_r = len([x for x in self.red if x != None])
+		h  = 0
 		if me == "y":
-			return n_y - n_r
+			if "h1" in self.yellow:
+				h += 50
+			h += n_y - n_r
+			return h
+
 		else:
-			return n_r - n_y
+			if "h1" in self.yellow:
+				h -= 50
+			h += n_r - n_y
+			return h
 
 		# return random.randint(0,100)
 
@@ -47,7 +55,7 @@ class Board():
 	
 	def move(self, color):
 		children = []
-		print color
+		# print color
 
 		global neighbors
 		global eatings
@@ -96,45 +104,50 @@ class Board():
 
 		return children
 
-def minimax(board, turn, me, alpha, beta, depth):
+def minimax(board, turn, me, alpha, beta, depth, tab):
 	# print "nova iteracao da recursao"
-	print depth
-	print board
+	print tab + "Depth: " + str(depth)
+	print tab + str(board)
 	estado = board.avaliacao(me)
-	print estado
+	print tab + "Avaliacao: " + str(estado)
 
 	# ends = [n for n in range(-1,2)]
 	# if estado in ends:
 	# 	return estado
-	print depth < MAX_DEPTH
-	if depth < MAX_DEPTH:
-		print "Turn: " + turn
-		print "Me: " + me
+
+	# print depth < MAX_DEPTH-1
+	if depth < MAX_DEPTH-1:
+		# print "Turn: " + turn
+		# print "Me: " + me
 		if turn != me:
-			# print "Min"
+			print tab + "Min"
+
 			aval = sys.maxint
 			beta_board = None
 			children = board.move(turn)
-			print "CHILDREN: " + str(len(children))
+			# print "CHILDREN: " + str(len(children))
 			for c in children:
-				avalminmax, n_board = minimax(c, me, me, alpha, beta, depth+1)
+				print tab + str(c)
+				avalminmax, n_board = minimax(c, me, me, alpha, beta, depth+1, tab+"\t")
 				aval = min(aval, avalminmax)
 				# print depth
-				# print "BOARD: " + str(n_board)
+				print tab + "BOARD: " + str(n_board)
 				if aval < beta:
 					beta = aval
 				if alpha >= beta:
+					print tab + "Returned: " + str(beta)
 					return beta, c
-
+					
+			print tab + "Returned: " + str(aval)
 			return aval, c
 
 		else:
-			# print "Max"
+			print tab + "Max"
 
 			aval = -sys.maxint-1
 			# print board.board
 			alpha_board = None
-			print turn
+			# print turn
 			children = board.move(turn)
 
 			if me == "r":
@@ -142,19 +155,23 @@ def minimax(board, turn, me, alpha, beta, depth):
 			else:
 				turn = "r"
 
-			print "CHILDREN: " + str(len(children))
+			# print "CHILDREN: " + str(len(children))
 			for c in children:
-				avalminmax, n_board = minimax(c, turn, me, alpha, beta, depth+1)
-				aval = min(aval, avalminmax)
+				print tab + str(c)
+				avalminmax, n_board = minimax(c, turn, me, alpha, beta, depth+1, tab+"\t")
+				aval = max(aval, avalminmax)
 				# print depth
-				# print "BOARD: " + str(n_board)
+				print tab + "BOARD: " + str(n_board)
 				if aval > alpha:
 					alpha = aval
 				if alpha >= beta:
+					print tab + "Returned: " + str(alpha)
 					return alpha, c
 
+			print tab + "Returned: " + str(aval)
 			return aval, c 
 	else:
+		print tab + "Returned: " + str(estado)
 		return estado, board
 def main():
 	b = Board()
@@ -162,9 +179,9 @@ def main():
 	# print b
 
 	# children = b.move("r")
-	me = "r"
+	me = "y"
 
-	aval, board = minimax(b, "y", me, -sys.maxint-1,sys.maxint, 0)
+	aval, board = minimax(b, "y", me, -sys.maxint-1,sys.maxint, 0, "")
 	print aval
 	print board
 
