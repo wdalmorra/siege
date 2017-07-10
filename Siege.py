@@ -3,13 +3,54 @@ import json
 import sys
 import random
 
-MAX_DEPTH = 2
+MAX_DEPTH = 4
 
 with open("vizinhos.json") as v_file:
 	neighbors = json.load(v_file)
 
 with open("coletas.json") as c_file:
 	eatings = json.load(c_file)
+
+def massacre(board, color):
+	sequence = []
+	ate = False
+	if color == "y":
+		for p in board.yellow:
+			if p != None:
+				for n in eatings[p]:
+					if n[1] in board.red and (n[2] not in board.yellow and n[2] not in board.red):
+						newYellow = [x if x != p else str(n[2]) for x in board.yellow]
+						newRed = [x if x != n[1] else None for x in board.red]
+						newBoard = Board()
+						newBoard.setYellow(newYellow)
+						newBoard.setRed(newRed)
+						sequence.append(newBoard)
+
+						sequence.extend(massacre(newBoard, color))
+						ate = True
+						break
+			if ate:
+				break
+	else:
+		for p in board.red:
+			if p != None:
+				for n in eatings[p]:
+					if n[1] in board.yellow and (n[2] not in board.yellow and n[2] not in board.red):
+						newYellow = [x if x != n[1] else None for x in self.yellow]
+						newRed = [x if x != p else str(n[2]) for x in self.red]
+						newBoard = Board()
+						newBoard.setYellow(newYellow)
+						newBoard.setRed(newRed)
+						sequence.append(newBoard)
+
+						sequence.extend(massacre(newBoard, color))
+						ate = True
+						break
+			if ate:
+				break
+	return sequence
+
+
 
 class Board():
 	"""docstring for Board"""
@@ -31,13 +72,13 @@ class Board():
 		if me == "y":
 			if "h1" in self.yellow:
 				h += 50
-			h += (n_y - n_r) * 10
+			h += (n_y - n_r) * 100
 			return h
 
 		else:
 			if "h1" in self.yellow:
 				h -= 50
-			h += (n_r - n_y) * 10
+			h += (n_r - n_y) * 100
 			return h
 
 		# return random.randint(0,100)
@@ -45,23 +86,25 @@ class Board():
 		
 	def startGame(self):
 		self.yellow = ["g1","g2","g3","g4","g5","g6","g7","g8","f1","f2","f3","f4","f5","f6","f7","f8"]
-		self.red = ["a1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","e6","a15","a16"]
+		self.red = ["a1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","e6","c11","e8"]
 
 	def setYellow(self, yellow):
 		self.yellow = deepcopy(yellow)
 
 	def setRed(self, red):
 		self.red = deepcopy(red)
-	
+
 	def move(self, color):
 		children = []
 		# print color
+
 
 		global neighbors
 		global eatings
 
 		if color == "y":
 			for p in self.yellow:
+				sequence = []		# Sequences of moves
 				# MOVIMENTO COMUM
 				if p != None:
 					for n in neighbors[p]:
@@ -70,7 +113,10 @@ class Board():
 							newBoard = Board()
 							newBoard.setYellow(newYellow)
 							newBoard.setRed(self.red)
-							children.append(newBoard)
+
+							sequence.append(newBoard)
+
+							children.append(sequence)
 					# CONSUMO DE PECA OPONENTE
 					for n in eatings[p]:
 						if n[1] in self.red and (n[2] not in self.yellow and n[2] not in self.red):
@@ -79,11 +125,18 @@ class Board():
 							newBoard = Board()
 							newBoard.setYellow(newYellow)
 							newBoard.setRed(newRed)
-							children.append(newBoard)
+
+							sequence.append(newBoard)
+
+							# Check for MASSACRE!
+							sequence.extend(massacre(newBoard, color))
+
+							children.append(sequence)
 
 		elif color == "r":
 
 			for p in self.red:
+				sequence = []		# Sequences of moves
 				# MOVIMENTO COMUM
 				if p != None:
 					for n in neighbors[p]:
@@ -92,7 +145,10 @@ class Board():
 							newBoard = Board()
 							newBoard.setYellow(self.yellow)
 							newBoard.setRed(newRed)
-							children.append(newBoard)
+
+							sequence.append(newBoard)
+
+							children.append(sequence)
 
 					# CONSUMO DE PECA OPONENTE
 					for n in eatings[p]:
@@ -102,7 +158,13 @@ class Board():
 							newBoard = Board()
 							newBoard.setYellow(newYellow)
 							newBoard.setRed(newRed)
-							children.append(newBoard)
+
+							sequence.append(newBoard)
+
+							# Check for MASSACRE!
+							sequence.extend(massacre(newBoard, color))
+
+							children.append(sequence)
 
 		return children
 
@@ -129,8 +191,8 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 			children = board.move(turn)
 			# print "CHILDREN: " + str(len(children))
 			for c in children:
-				print tab + str(c)
-				avalminmax, n_board = minimax(c, me, me, alpha, beta, depth+1, tab+"\t")
+				print tab + str(c[-1])
+				avalminmax, n_board = minimax(c[-1], me, me, alpha, beta, depth+1, tab+"\t")
 				aval = min(aval, avalminmax)
 				# print depth
 				print tab + "BOARD: " + str(n_board)
@@ -160,8 +222,8 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 
 			# print "CHILDREN: " + str(len(children))
 			for c in children:
-				print tab + str(c)
-				avalminmax, n_board = minimax(c, turn, me, alpha, beta, depth+1, tab+"\t")
+				print tab + str(c[-1])
+				avalminmax, n_board = minimax(c[-1], turn, me, alpha, beta, depth+1, tab+"\t")
 				aval = max(aval, avalminmax)
 				# print depth
 				print tab + "BOARD: " + str(n_board)
@@ -185,9 +247,15 @@ def main():
 	# children = b.move("r")
 	me = "y"
 
-	aval, board = minimax(b, "y", me, -sys.maxint-1,sys.maxint, 0, "")
+	aval, sequence = minimax(b, "y", me, -sys.maxint-1,sys.maxint, 0, "")
 	print aval
-	print board
+	
+	if len(sequence) > 1:
+		print "MASSACRE"
+
+	for b in sequence:
+		print b
+
 
 
 if __name__ == '__main__':
