@@ -1,7 +1,7 @@
 from copy import deepcopy
 import json
 import sys
-import random
+
 
 MAX_DEPTH = 4
 
@@ -11,10 +11,25 @@ with open("vizinhos.json") as v_file:
 with open("coletas.json") as c_file:
 	eatings = json.load(c_file)
 
+def read_move():
+	data = raw_input("Enter your move (<from><space><to>): ")
+	data = data.split(" ")
+	m_from = data[0]
+	m_to = data[1]
+	return m_from, m_to
+
+
 def check_move(m_from, m_to, color, board):
 
 	global neighbors
 	global eatings
+
+	if color == "y":
+		if m_from not in board.yellow:
+			return False
+	else:
+		if m_from not in board.red:
+			pass
 
 	if m_from in neighbors:
 		if m_to in neighbors[m_from] and m_to not in board.yellow and m_to not in board.red:
@@ -36,6 +51,7 @@ def massacre(board, color):
 
 	sequence = []
 	ate = False
+
 	if color == "y":
 		for p in board.yellow:
 			if p != None:
@@ -83,7 +99,7 @@ class Board():
 	def __str__(self):
 
 		output = "YELLOW:" + str(self.yellow)
-		output += "\t RED:" + str(self.red)
+		output += "\nRED:" + str(self.red)
 
 		return output
 
@@ -107,8 +123,8 @@ class Board():
 
 		
 	def startGame(self):
-		self.yellow = ["g1","g2","g3","g4","g5","g6","g7","g8","f1","f2","f3","f4","f5","f6","f7","f8"]
-		self.red = ["b1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15","a16"]
+		self.yellow = ["g1","g2","g3","g4","g5","g6","g7","g8","d1","b1","f3","f4","f5","f6","f7","f8"]
+		self.red = ["a1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15","a16"]
 
 	def setYellow(self, yellow):
 		self.yellow = deepcopy(yellow)
@@ -126,10 +142,10 @@ class Board():
 
 		if color == "y":
 			for p in self.yellow:
-				sequence = []		# Sequences of moves
 				# MOVIMENTO COMUM
 				if p != None:
 					for n in neighbors[p]:
+						sequence = []		# Sequences of moves
 						if n not in self.yellow and n not in self.red:
 							newYellow = [x if x != p else str(n) for x in self.yellow]
 							newBoard = Board()
@@ -141,6 +157,7 @@ class Board():
 							children.append(sequence)
 					# CONSUMO DE PECA OPONENTE
 					for n in eatings[p]:
+						sequence = []		# Sequences of moves
 						if n[1] in self.red and (n[2] not in self.yellow and n[2] not in self.red):
 							newYellow = [x if x != p else str(n[2]) for x in self.yellow]
 							newRed = [x if x != n[1] else None for x in self.red]
@@ -154,14 +171,15 @@ class Board():
 							sequence.extend(massacre(newBoard, color))
 
 							children.append(sequence)
+							sequence = []
 
 		elif color == "r":
 
 			for p in self.red:
-				sequence = []		# Sequences of moves
 				# MOVIMENTO COMUM
 				if p != None:
 					for n in neighbors[p]:
+						sequence = []		# Sequences of moves
 						if n not in self.yellow and n not in self.red:
 							newRed = [x if x != p else str(n) for x in self.red]
 							newBoard = Board()
@@ -174,6 +192,7 @@ class Board():
 
 					# CONSUMO DE PECA OPONENTE
 					for n in eatings[p]:
+						sequence = []		# Sequences of moves
 						if n[1] in self.yellow and (n[2] not in self.yellow and n[2] not in self.red):
 							newYellow = [x if x != n[1] else None for x in self.yellow]
 							newRed = [x if x != p else str(n[2]) for x in self.red]
@@ -271,7 +290,7 @@ def main():
 	me = "r" if opponent == "y" else "y"
 
 	finished = False
-
+	current_board = start
 	if me == "r":
 		print "I go first!"
 		aval, sequence = minimax(start, "r", me, -sys.maxint-1,sys.maxint, 0, "")
@@ -298,29 +317,83 @@ def main():
 
 	while not finished:
 		print "Your Turn"
-		print current_board
-		data = raw_input("Enter your move (<from><space><to>): ")
-		data = data.split(" ")
-		m_from = data[0]
-		m_to = data[1]
+
+		m_from, m_to  = read_move()
 
 		valid =	check_move(m_from, m_to, opponent, current_board)
 
 		while not valid:
 			print "Invalid move! Try Again"
 
-			data = raw_input("Enter your move (<from><space><to>): ")
-			data = data.split(" ")
-			m_from = data[0]
-			m_to = data[1]
+			m_from, m_to  = read_move()
 
 			valid =	check_move(m_from, m_to, opponent, current_board)
 
 
 		if opponent == "y":
-			current_board.yellow = [x if x != m_from else m_to for x in current_board.yellow]
+			if m_to in neighbors[m_from]:
+				current_board.yellow = [x if x != m_from else m_to for x in current_board.yellow]
+			else:
+				for n in eatings[m_from]:
+					if n[2] == m_to:
+						current_board.yellow = [x if x != m_from else str(n[2]) for x in current_board.yellow]
+						current_board.red = [x if x != n[1] else None for x in current_board.red]
+						break
 		else:
-			current_board.red = [x if x != m_from else m_to for x in current_board.red]
+			if m_to in neighbors[m_from]:
+				current_board.red = [x if x != m_from else m_to for x in current_board.red]
+			else:
+				for n in eatings[m_from]:
+					if n[2] == m_to:
+						current_board.yellow = [x if x != n[1] else None for x in current_board.yellow]
+						current_board.red = [x if x != m_from else str(n[2]) for x in current_board.red]
+						break
+
+		print current_board
+
+		more = raw_input("Any more moves? (y/n):")
+
+		while(more == "y"):
+			valid = False
+			
+			m_from, m_to  = read_move()
+
+			valid =	check_move(m_from, m_to, opponent, current_board)
+
+			while not valid:
+				print "Invalid move! Try Again"
+
+				m_from, m_to  = read_move()
+
+				if m_to in neighbors[m_from]:
+					valid = False
+					continue
+
+				valid =	check_move(m_from, m_to, opponent, current_board)
+
+
+
+			if opponent == "y":
+				if m_to in neighbors[m_from]:
+					current_board.yellow = [x if x != m_from else m_to for x in current_board.yellow]
+				else:
+					for n in eatings[m_from]:
+						if n[2] == m_to:
+							current_board.yellow = [x if x != m_from else str(n[2]) for x in current_board.yellow]
+							current_board.red = [x if x != n[1] else None for x in current_board.red]
+							break
+			else:
+				if m_to in neighbors[m_from]:
+					current_board.red = [x if x != m_from else m_to for x in current_board.red]
+				else:
+					for n in eatings[m_from]:
+						if n[2] == m_to:
+							current_board.yellow = [x if x != n[1] else None for x in current_board.yellow]
+							current_board.red = [x if x != m_from else str(n[2]) for x in current_board.red]
+							break
+
+			print current_board
+			more = raw_input("Any more moves? (y/n):")
 
 		aval = current_board.avaliacao(me)
 
@@ -329,22 +402,19 @@ def main():
 			break
 
 		print "My Turn"
-		print current_board
 		aval, sequence = minimax(current_board, me, me, -sys.maxint-1,sys.maxint, 0, "")
 		sequence_size = len(sequence)
 		if sequence_size > 1:
 			print "MASSACRE!!!!!!!!"
 		print "My move(s) is(are): "
-		for a, b in zip(current_board.red, sequence[0].red):
+		for a, b in zip(current_board.red if me == "r" else current_board.yellow, sequence[0].red if me == "r" else sequence[0].yellow):
 			if a != b:
 				print "From: " + a
 				print "To: "  + b
 				break
 		if sequence_size > 1:
 			for i in range(sequence_size-1):
-				for a, b in zip(sequence[i].red, sequence[i+1].red):
-					print sequence[i]
-					print sequence[i+1]
+				for a, b in zip(sequence[i].red if me == "r" else sequence[i].yellow, sequence[i+1].red if me == "r" else sequence[i+1].yellow):
 					if a != b:
 						print "From: " + a
 						print "To: "  + b
@@ -352,6 +422,7 @@ def main():
 		
 		current_board = sequence[-1]
 		
+		print current_board
 		aval = current_board.avaliacao(me)
 		
 		if aval > 100000:
