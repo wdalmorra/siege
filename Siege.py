@@ -147,8 +147,9 @@ def massacre(board, color):
 						newBoard.setYellow(newYellow)
 						newBoard.setRed(newRed)
 						sequence.append(newBoard)
+						if "h1" not in newBoard.red:
+							sequence.extend(massacre(newBoard, color))
 
-						sequence.extend(massacre(newBoard, color))
 						ate = True
 						break
 			if ate:
@@ -182,27 +183,52 @@ class Board():
 		return output
 
 	def avaliacao(self, me):
+
 		n_y = len([x for x in self.yellow if x != None])
 		n_r = len([x for x in self.red if x != None])
+
+		avg_d = 0.0
+		for r in self.red:
+			if r != None:
+				avg_d += ord(r[0])-96
+
+		if n_r > 0:
+			avg_d /= n_r
+
 		h  = 0
+
 		if me == "y":
+
+			if "h1" in self.red:
+				return -10000
+			elif n_r == 0:
+				return 10000 
+
+
 			if "h1" in self.yellow:
-				h += 50
-			h += (n_y - n_r) * 100
+				h += 50					# Yellow Dominate Throne
+			h += (n_y - n_r) * 100 		# Difference of Soldiers            The Higher The Better
+			h -= avg_d * 10				# Average Distance of Red Army		The Higher The Worse
 			return h
 
 		else:
+
+			if "h1" in self.red:
+				return 10000
+			elif n_r == 0:
+				return -10000
+
 			if "h1" in self.yellow:
-				h -= 50
-			h += (n_r - n_y) * 100
+				h -= 50					# Yellow Dominate Throne
+			h += (n_r - n_y) * 100		# Difference of Soldiers            The Higher The Better
+			h += avg_d * 10				# Average Distance of Red Army		The Higher The Better
 			return h
 
-		# return random.randint(0,100)
 
 		
 	def startGame(self):
-		self.yellow = ["g1","g2","g3","g4","g5","g6","g7","g8","d1","b1","f3","f4","f5","f6","f7","f8"]
-		self.red = ["a1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15","a16"]
+		self.yellow = ["g1","g2","g3","g4","g5","g6","g7","g8"]
+		self.red = ["d1","d3","d5","d7","d9","d11","d13","d15"]
 
 	def setYellow(self, yellow):
 		self.yellow = deepcopy(yellow)
@@ -279,16 +305,14 @@ class Board():
 							newBoard.setRed(newRed)
 
 							sequence.append(newBoard)
-
-							# Check for MASSACRE!
-							sequence.extend(massacre(newBoard, color))
+							print self.red
+							if "h1" not in newBoard.red:
+								# Check for MASSACRE!
+								sequence.extend(massacre(newBoard, color))
 
 							children.append(sequence)
 
 		return children
-
-
-
 
 
 
@@ -399,21 +423,21 @@ def main():
 
 
 	while not finished:
-		print "Your Turn"
-		current_board = opponent_turn(opponent, current_board)
-		print current_board
-		aval = current_board.avaliacao(me)
-		if aval < -100000:
-			print "You win"
-			finished = True
-			continue
-
+		if len([x for x in current_board.yellow if x != None]) > 0:
+			print "Your Turn"
+			current_board = opponent_turn(opponent, current_board)
+			print current_board
+			aval = current_board.avaliacao(me)
+			if aval <= -10000:
+				print "You win"
+				finished = True
+				continue
 
 		print "My Turn"
 		current_board = my_turn(current_board, me)
 		print current_board
 		aval = current_board.avaliacao(me)
-		if aval > 100000:
+		if aval >= 10000 :
 			print "I win"
 			finished = True
 			continue
