@@ -1,9 +1,9 @@
 from copy import deepcopy
 import json
 import sys
+import random
 
-
-MAX_DEPTH = 4
+MAX_DEPTH = 5
 
 with open("vizinhos.json") as v_file:
 	neighbors = json.load(v_file)
@@ -187,41 +187,57 @@ class Board():
 		n_y = len([x for x in self.yellow if x != None])
 		n_r = len([x for x in self.red if x != None])
 
-		avg_d = 0.0
+		avg_d_r = 0.0
+		hgst_d_r = 0
 		for r in self.red:
 			if r != None:
-				avg_d += ord(r[0])-96
+				r_d = ord(r[0])-96
+				avg_d_r += r_d
+				if r_d > hgst_d_r:
+					hgst_d_r = r_d
 
 		if n_r > 0:
-			avg_d /= n_r
+			avg_d_r /= n_r
+
+
+		avg_d_y = 0.0
+		for y in self.yellow:
+			if y != None:
+				avg_d_y += ord(y[0])-96
+
+		if n_y > 0:
+			avg_d_y /= n_y
 
 		h  = 0
 
 		if me == "y":
 
 			if "h1" in self.red:
-				return -10000
+				return -1000000
 			elif n_r == 0:
-				return 10000 
+				return 1000000
 
 
+			h += (n_y - n_r) * 10 		# Difference of Soldiers            			The Higher The Better
+			h -= avg_d_r * 2			# Average Distance of Red Army To Center		The Higher The Worse
+			h += avg_d_y * 4			# Average Distance of Yellow Army To Center		The Higher The Better
 			if "h1" in self.yellow:
-				h += 50					# Yellow Dominate Throne
-			h += (n_y - n_r) * 100 		# Difference of Soldiers            The Higher The Better
-			h -= avg_d * 10				# Average Distance of Red Army		The Higher The Worse
+				h *= 5					# Yellow Dominate Throne
 			return h
 
 		else:
 
 			if "h1" in self.red:
-				return 10000
+				return 1000000
 			elif n_r == 0:
-				return -10000
-
-			if "h1" in self.yellow:
-				h -= 50					# Yellow Dominate Throne
-			h += (n_r - n_y) * 100		# Difference of Soldiers            The Higher The Better
-			h += avg_d * 10				# Average Distance of Red Army		The Higher The Better
+				return -1000000
+			if n_y > 0:
+				if "h1" in self.yellow:
+					h -= 100				# Yellow Dominate Throne
+				h += (n_r - n_y) * 10		# Difference of Soldiers            			The Higher The Better
+				h += avg_d_r * 5			# Average Distance of Red Army To Center		The Higher The Better
+				h -= avg_d_y * 2			# Average Distance of Yellow Army To Center		The Higher The Worse
+			h += hgst_d_r * 10				# Closest Red Soldier 							The Highert The Better
 			return h
 
 
@@ -259,7 +275,7 @@ class Board():
 							sequence.append(newBoard)
 
 							children.append(sequence)
-					# CONSUMO DE PECA OPONENTE
+					# eat opponent's soldier
 					for n in eatings[p]:
 						sequence = []		# Sequences of moves
 						if n[1] in self.red and (n[2] not in self.yellow and n[2] not in self.red):
@@ -294,7 +310,7 @@ class Board():
 
 							children.append(sequence)
 
-					# CONSUMO DE PECA OPONENTE
+					# eat opponent's soldier
 					for n in eatings[p]:
 						sequence = []		# Sequences of moves
 						if n[1] in self.yellow and (n[2] not in self.yellow and n[2] not in self.red):
@@ -305,7 +321,6 @@ class Board():
 							newBoard.setRed(newRed)
 
 							sequence.append(newBoard)
-							print self.red
 							if "h1" not in newBoard.red:
 								# Check for MASSACRE!
 								sequence.extend(massacre(newBoard, color))
@@ -342,7 +357,7 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 			# print tab + "Min"
 
 			aval = sys.maxint
-			beta_board = None
+			beta_board = [None]
 			children = board.move(turn)
 			# print "CHILDREN: " + str(len(children))
 			for c in children:
@@ -353,20 +368,23 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 				# print tab + "BOARD: " + str(n_board)
 				if aval < beta:
 					beta = aval
-					beta_board = c
+					beta_board = []
+					beta_board.append(c)
+				if aval == beta:
+					beta_board.append(c)
 				if alpha >= beta:
 					# print tab + "Returned: " + str(beta)
-					return beta, beta_board
-					
+					return beta, beta_board[random.randint(0,len(beta_board)-1)]
+				
 			# print tab + "Returned: " + str(aval)
-			return aval, beta_board
+			return aval, beta_board[random.randint(0,len(beta_board)-1)]
 
 		else:
 			# print tab + "Max"
 
 			aval = -sys.maxint-1
 			# print board.board
-			alpha_board = None
+			alpha_board = [None]
 			# print turn
 			children = board.move(turn)
 
@@ -384,13 +402,16 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 				# print tab + "BOARD: " + str(n_board)
 				if aval > alpha:
 					alpha = aval
-					alpha_board = c
+					alpha_board = []
+					alpha_board.append(c)
+				if aval == alpha:
+					alpha_board.append(c)
 				if alpha >= beta:
 					# print tab + "Returned: " + str(alpha)
-					return alpha, alpha_board
+					return alpha, alpha_board[random.randint(0,len(alpha_board)-1)]
 
 			# print tab + "Returned: " + str(aval)
-			return aval, alpha_board 
+			return aval, alpha_board[random.randint(0,len(alpha_board)-1)]
 	else:
 		# print tab + "Returned: " + str(estado)
 		return estado, board
@@ -423,24 +444,24 @@ def main():
 
 
 	while not finished:
-		if len([x for x in current_board.yellow if x != None]) > 0:
+		if ((len([x for x in current_board.yellow if x != None]) > 0) and opponent == "y") or (opponent == "r"):
 			print "Your Turn"
-			current_board = opponent_turn(opponent, current_board)
+			current_board = my_turn(current_board, opponent)
 			print current_board
 			aval = current_board.avaliacao(me)
-			if aval <= -10000:
+			if aval <= -1000000:
 				print "You win"
 				finished = True
 				continue
-
-		print "My Turn"
-		current_board = my_turn(current_board, me)
-		print current_board
-		aval = current_board.avaliacao(me)
-		if aval >= 10000 :
-			print "I win"
-			finished = True
-			continue
+		if ((len([x for x in current_board.yellow if x != None]) > 0) and me == "y") or (me == "r"):
+			print "My Turn"
+			current_board = my_turn(current_board, me)
+			print current_board
+			aval = current_board.avaliacao(me)
+			if aval >= 1000000:
+				print "I win"
+				finished = True
+				continue
 
 if __name__ == '__main__':
 	main()
