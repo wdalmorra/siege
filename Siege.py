@@ -2,6 +2,7 @@ from copy import deepcopy
 import json
 import sys
 import random
+import socket
 
 MAX_DEPTH = 5
 
@@ -424,14 +425,34 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 
 
 
-def main():
+def main(argv):
 	start = Board()
 	start.startGame()
 	# print b
-	opponent = raw_input("Which color are you? (r/y):  ")
-	# children = b.move("r")
+
+	print argv[1]
+	print argv[2]
+	print argv[3]
+	print argv[4]
+
+	me 			 = argv[1]
+	port_send 	 = argv[2]
+	port_rcv 	 = argv[3]
+	ip_simulator = argv[4]
+
+	# mess = "conecta"
+	# print("Send Message: ",mens)
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	# sock.sendto(mess.encode('utf-8'), (ip_simulator, port_send))
 	
-	me = "r" if opponent == "y" else "y"
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+	# sock.bind((ip_simulator, port_rcv))
+
+	# while True:
+	#    data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+	#    print ("Recebeu mensagem:", data.decode('utf_8'))
+
+	opponent = "r" if me == "y" else "y"
 
 	finished = False
 	current_board = start
@@ -441,7 +462,6 @@ def main():
 		current_board = my_turn(current_board, me)
 	else:
 		print "You go first!"
-
 
 	while not finished:
 		if ((len([x for x in current_board.yellow if x != None]) > 0) and opponent == "y") or (opponent == "r"):
@@ -464,7 +484,7 @@ def main():
 				continue
 
 if __name__ == '__main__':
-	main()
+	main(sys.argv)
 
 
 
