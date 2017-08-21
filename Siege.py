@@ -2,7 +2,7 @@ from copy import deepcopy
 import json
 import sys
 import random
-import socket
+from client import Client
 
 MAX_DEPTH = 5
 
@@ -421,8 +421,35 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 
 
 
+def treat_move(color, c_board, n_board)
+	moves = []
+	index = 0
+	boards = [c_board] + n_board
+	for a, b in zip(boards[index].red if color == "r" else boards[index].yellow, boards[index+1].red if color == "r" else boards[index+1].yellow):
+		if a != b:
+			for m_to in neighbors[a]:
+				if m_to == b:
+					move.append("De " + a + " para " + b)
+					index += 1
+				break
+			
+			if len(move) == index:	# Eating
+				for n in eatings[a]:
+					if :
+						pass
 
+	if len(n_board) > 1:		# Massacre
+		
+	else:
+		
 
+		for i in range(len(c_board.red)):
+			if c_board.red[i] != n_board.red[i]:
+				for m_to in neighbors[c_board[i]]:
+					if m_to == n_board.red[i]:
+						move = "De " + c_board.red[i] + " para " + n_board[i]
+				if move == "":	# Eating
+					for n in eatings[]
 
 
 def main(argv):
@@ -430,15 +457,15 @@ def main(argv):
 	start.startGame()
 	# print b
 
-	print argv[1]
-	print argv[2]
-	print argv[3]
-	print argv[4]
-
 	me 			 = argv[1]
-	port_send 	 = argv[2]
-	port_rcv 	 = argv[3]
-	ip_simulator = argv[4]
+	port_send 	 = int(argv[2])
+	port_rcv 	 = int(argv[3])
+	ip_server 	 = argv[4]
+
+	client = Client(port_send,port_rcv, ip_server)
+
+	client.connect()
+	client.rcv_message()
 
 	# mess = "conecta"
 	# print("Send Message: ",mens)
@@ -475,7 +502,10 @@ def main(argv):
 				continue
 		if ((len([x for x in current_board.yellow if x != None]) > 0) and me == "y") or (me == "r"):
 			print "My Turn"
+			old_board = deepcopy(current_board)
 			current_board = my_turn(current_board, me)
+			move = treat_move(me, c_board, n_board)
+			client.send_move(old_board, current_board)
 			print current_board
 			aval = current_board.avaliacao(me)
 			if aval >= 1000000:
