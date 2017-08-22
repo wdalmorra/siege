@@ -14,19 +14,28 @@ class Client(object):
 		print("Send Message: ",message)
 		self.sock.sendto(message.encode('utf-8'), (self.ip_server, self.port_send))
 
+		answer = self.rcv_message()
+		if answer == "conectado":
+			print "Conectado"
+
 	def rcv_message(self):
 
 		while True:
 			data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
-			print ("Message received:", data.decode('utf_8'))
+			# print ("Message received:", data.decode('utf_8'))
 			return data
 
-	def send_move(self, move):
+	def send_move(self, moves):
 
-		message = move
+		for m in moves:
+			message = m
+			print("Send Message: ", message)
+			self.sock.sendto(message.encode('utf-8'), (self.ip_server, self.port_send))
+
+			answer = self.rcv_message()
+			if answer == "ok":
+				print "Movimento OK"
+
+		message = "fim"
 		print("Send Message: ", message)
 		self.sock.sendto(message.encode('utf-8'), (self.ip_server, self.port_send))
-
-		answer = rcv_message()
-		if answer == "ok":
-			

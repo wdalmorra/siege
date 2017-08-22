@@ -35,9 +35,9 @@ def update_board(color, current_board, m_from, m_to):
 
 def my_turn(current_board, me):
 	aval, sequence = minimax(current_board, me, me, -sys.maxint-1,sys.maxint, 0, "")
+	print aval
 	list_moves(current_board, sequence, me)
-	current_board = sequence[-1]
-	return current_board
+	return sequence
 
 def opponent_massacre(color, current_board):
 	more = raw_input("Any more moves? (y/n):")
@@ -220,10 +220,10 @@ class Board():
 
 
 			h += (n_y - n_r) * 10 		# Difference of Soldiers            			The Higher The Better
-			h -= avg_d_r * 2			# Average Distance of Red Army To Center		The Higher The Worse
-			h += avg_d_y * 4			# Average Distance of Yellow Army To Center		The Higher The Better
-			if "h1" in self.yellow:
-				h *= 5					# Yellow Dominate Throne
+			# h -= avg_d_r * 2			# Average Distance of Red Army To Center		The Higher The Worse
+			h += avg_d_y - (avg_d_r - avg_d_y) 				# Average Distance of Yellow Army To Center		The Higher The Better
+			# if "h1" in self.yellow:
+			# 	h *= 5					# Yellow Dominate Throne
 			return h
 
 		else:
@@ -232,13 +232,12 @@ class Board():
 				return 1000000
 			elif n_r == 0:
 				return -1000000
-			if n_y > 0:
-				if "h1" in self.yellow:
-					h -= 100				# Yellow Dominate Throne
-				h += (n_r - n_y) * 10		# Difference of Soldiers            			The Higher The Better
-				h += avg_d_r * 5			# Average Distance of Red Army To Center		The Higher The Better
-				h -= avg_d_y * 2			# Average Distance of Yellow Army To Center		The Higher The Worse
-			h += hgst_d_r * 10				# Closest Red Soldier 							The Highert The Better
+			# if "h1" in self.yellow:
+			#	h -= 100				# Yellow Dominate Throne
+			h += (n_r - n_y) * 10		# Difference of Soldiers            			The Higher The Better
+			h += avg_d_r - (avg_d_y - avg_d_r)			# Average Distance of Red Army To Center		The Higher The Better
+			# h -= avg_d_y * 2			# Average Distance of Yellow Army To Center		The Higher The Worse
+			h += hgst_d_r				# Closest Red Soldier 							The Highert The Better
 			return h
 
 
@@ -420,37 +419,55 @@ def minimax(board, turn, me, alpha, beta, depth, tab):
 
 
 
+def decode_message(opp_color,current_board, message):
+	
+	message = message.split(" ")
+	n_board = Board()
+	if len(message) == 4: # Commom move
+		new_board = [x if x != message[1] else message[3] for x in(current_board.red if opp_color == "r" else current_board.yellow)]
 
-def treat_move(color, c_board, n_board)
+
+		if opp_color == "y":
+			n_board.yellow = deepcopy(new_board)
+			n_board.red = deepcopy(current_board.red)
+		else:
+			n_board.yellow = deepcopy(current_board.yellow)
+			n_board.red = deepcopy(new_board)
+
+	elif len(message) == 6: # Eating
+
+		new_board = [x if x != message[1] else message[3] for x in (current_board.red if opp_color == "r" else current_board.yellow)]
+		new_board2 = [x if x != message[5] else None for x in (current_board.red if opp_color == "y" else current_board.yellow)]
+
+		if opp_color == "y":
+			n_board.yellow = deepcopy(new_board)
+			n_board.red = deepcopy(new_board2)
+		else:
+			n_board.yellow = deepcopy(new_board2)
+			n_board.red = deepcopy(new_board)		
+
+	return n_board
+
+def treat_move(color, c_board, n_board):
 	moves = []
 	index = 0
 	boards = [c_board] + n_board
-	for a, b in zip(boards[index].red if color == "r" else boards[index].yellow, boards[index+1].red if color == "r" else boards[index+1].yellow):
-		if a != b:
-			for m_to in neighbors[a]:
-				if m_to == b:
-					move.append("De " + a + " para " + b)
-					index += 1
-				break
-			
-			if len(move) == index:	# Eating
-				for n in eatings[a]:
-					if :
-						pass
-
-	if len(n_board) > 1:		# Massacre
-		
-	else:
-		
-
-		for i in range(len(c_board.red)):
-			if c_board.red[i] != n_board.red[i]:
-				for m_to in neighbors[c_board[i]]:
-					if m_to == n_board.red[i]:
-						move = "De " + c_board.red[i] + " para " + n_board[i]
-				if move == "":	# Eating
-					for n in eatings[]
-
+	for i in range(len(boards) - 1):
+		for a, b in zip(boards[index].red if color == "r" else boards[index].yellow, boards[index+1].red if color == "r" else boards[index+1].yellow):
+			if a != b:
+				for m_to in neighbors[a]:
+					if m_to == b:
+						moves.append("De " + a + " para " + b)
+						index += 1
+						break
+				
+				if len(moves) == index:	# Eating
+					for n in eatings[a]:
+						if n[2] == b:
+							moves.append("De " + a + " para " + b + " captura " + n[1])
+							index += 1
+							break
+	return moves
 
 def main(argv):
 	start = Board()
@@ -463,21 +480,7 @@ def main(argv):
 	ip_server 	 = argv[4]
 
 	client = Client(port_send,port_rcv, ip_server)
-
 	client.connect()
-	client.rcv_message()
-
-	# mess = "conecta"
-	# print("Send Message: ",mens)
-	# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	# sock.sendto(mess.encode('utf-8'), (ip_simulator, port_send))
-	
-	# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-	# sock.bind((ip_simulator, port_rcv))
-
-	# while True:
-	#    data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-	#    print ("Recebeu mensagem:", data.decode('utf_8'))
 
 	opponent = "r" if me == "y" else "y"
 
@@ -486,27 +489,45 @@ def main(argv):
 	
 	if me == "r":
 		print "I go first!"
-		current_board = my_turn(current_board, me)
+		sequence = my_turn(current_board, me)
+		moves = treat_move(me, current_board, sequence)
+		print len(moves)
+		for m in moves:
+			print m
+		current_board = sequence[-1]
+		client.send_move(moves)
+		aval = current_board.avaliacao(me)
+		if aval >= 1000000:
+			print "I win"
+			finished = True
+				
 	else:
 		print "You go first!"
 
 	while not finished:
 		if ((len([x for x in current_board.yellow if x != None]) > 0) and opponent == "y") or (opponent == "r"):
 			print "Your Turn"
-			current_board = my_turn(current_board, opponent)
-			print current_board
+			
+			mess = client.rcv_message()
+			while mess != "fim":
+				current_board = decode_message(opponent, current_board, mess)
+				mess = client.rcv_message()
+
 			aval = current_board.avaliacao(me)
 			if aval <= -1000000:
 				print "You win"
 				finished = True
 				continue
+
 		if ((len([x for x in current_board.yellow if x != None]) > 0) and me == "y") or (me == "r"):
 			print "My Turn"
-			old_board = deepcopy(current_board)
-			current_board = my_turn(current_board, me)
-			move = treat_move(me, c_board, n_board)
-			client.send_move(old_board, current_board)
-			print current_board
+			sequence = my_turn(current_board, me)
+			moves = treat_move(me, current_board, sequence)
+			for m in moves:
+				print m
+			current_board = sequence[-1]
+			client.send_move(moves)
+			# print current_board
 			aval = current_board.avaliacao(me)
 			if aval >= 1000000:
 				print "I win"
